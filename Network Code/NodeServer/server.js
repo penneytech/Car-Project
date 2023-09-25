@@ -33,7 +33,7 @@ wss.on("connection", (ws) => {
 
         // Send update to WebClient
         const webClient = clients["WebClient"];
-        if (webClient && webClient.readyState === WebSocket.OPEN) {
+        if (WebClient && webClient.readyState === WebSocket.OPEN) {
           webClient.send(JSON.stringify({ clientId: ws.clientID, message: messageStr }));
         }
       }
