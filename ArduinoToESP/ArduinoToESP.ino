@@ -5,6 +5,8 @@
 SoftwareSerial mySerial(10, 11);  // RX, TX
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // LCD address, 16 column and 2 rows
 unsigned long lastLogTime = 0;
+unsigned long lastLEDChange = 0;
+bool ledState = LOW;
 String receivedData = "";
 
 void setup() {
@@ -36,10 +38,15 @@ void loop() {
   }
 
   unsigned long currentTime = millis();
+
+  // Blink LED without using delay
+  if (currentTime - lastLEDChange >= 200) {
+    lastLEDChange = currentTime;
+    ledState = !ledState;
+    digitalWrite(13, ledState);
+  }
+
   if (currentTime - lastLogTime >= 1000) {
     lastLogTime = currentTime;
-    digitalWrite(13, HIGH);
-    delay(200);
-    digitalWrite(13, LOW);
   }
 }

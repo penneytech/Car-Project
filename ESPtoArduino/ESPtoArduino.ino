@@ -15,7 +15,7 @@ void loop() {
   unsigned long currentTime = millis();
 
   // Send message every second
-  if (currentTime - lastMessageTime >= 300) {
+  if (currentTime - lastMessageTime >= 200) {
     lastMessageTime = currentTime;
     String message = "Hello " + String(currentTime);
     mySerial.print(message + '\n');
