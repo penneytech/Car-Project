@@ -11,6 +11,10 @@
 #define SENSOR_2_PIN A1
 #define SENSOR_3_PIN A2
 #define SENSOR_4_PIN A3
+int lastSensor1State = 0;
+int lastSensor2State = 0;
+int lastSensor3State = 0;
+int lastSensor4State = 0;
 
 EncoderStepCounter encoder(ENCODER_PIN1, ENCODER_PIN2, HALF_STEP);
 SoftwareSerial mySerial(10, 11);
@@ -80,6 +84,11 @@ void setup() {
   lcd.begin(16, 2);
   lcd.backlight();
   pinMode(ENCODER_BUTTON, INPUT_PULLUP);
+
+  pinMode(SENSOR_1_PIN, INPUT);
+  pinMode(SENSOR_2_PIN, INPUT);
+  pinMode(SENSOR_3_PIN, INPUT);
+  pinMode(SENSOR_4_PIN, INPUT);
 }
 
 void loop() {
@@ -96,6 +105,28 @@ void loop() {
       lcd.print(String(menuSelection == 2 ? ">DIR:" : " DIR:") + direction + "  " + String(menuSelection == 3 ? ">START" : " START"));
     }
     lastLCDChange = currentTime;
+
+  int currentSensor1State = digitalRead(SENSOR_1_PIN);
+  int currentSensor2State = digitalRead(SENSOR_2_PIN);
+  int currentSensor3State = digitalRead(SENSOR_3_PIN);
+  int currentSensor4State = digitalRead(SENSOR_4_PIN);
+
+  if (currentSensor1State != lastSensor1State) {
+    mySerial.print("Sensor 1 change: " + String(currentSensor1State) + '\n');
+    lastSensor1State = currentSensor1State;
+  }
+  if (currentSensor2State != lastSensor2State) {
+    mySerial.print("Sensor 2 change: " + String(currentSensor2State) + '\n');
+    lastSensor2State = currentSensor2State;
+  }
+  if (currentSensor3State != lastSensor3State) {
+    mySerial.print("Sensor 3 change: " + String(currentSensor3State) + '\n');
+    lastSensor3State = currentSensor3State;
+  }
+  if (currentSensor4State != lastSensor4State) {
+    mySerial.print("Sensor 4 change: " + String(currentSensor4State) + '\n');
+    lastSensor4State = currentSensor4State;
+  }
   }
 
   // Run Mode Logic
@@ -107,13 +138,18 @@ void loop() {
 
   while (mySerial.available() > 0) {
     char inChar = (char)mySerial.read();
+
     if (inChar == '\n') {  // assuming '\n' as the end-of-line character for your incoming messages
       mySerialData = newSerialData;
       newSerialData = "";
       newData = false;
-      Serial.println(mySerialData);
+      Serial.println("Received: " + mySerialData);
+      //String message = "Hi " + String(currentTime);
+      //mySerial.print(message + '\n');
     } else {
       newSerialData += inChar;
     }
   }
+
+
 }
