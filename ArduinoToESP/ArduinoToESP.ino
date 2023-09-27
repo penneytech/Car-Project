@@ -21,18 +21,22 @@ unsigned long lastLCDChange = 0;
 int menuSelection = 0;
 int xStartPosition = 0;
 int yStartPosition = 0;
+char direction = 'X';
 signed char prevPos = 0;
 
 bool isStarted = false;
+String mySerialData;
+String newSerialData;
+bool newData = false;
 
 void Start() {
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("READY");
   if (digitalRead(ENCODER_BUTTON) == LOW) {
     isStarted = false;
     delay(200);
   }
+
+  lcd.setCursor(0, 1);
+  lcd.print(mySerialData);
 }
 
 void runMenu() {
@@ -42,7 +46,7 @@ void runMenu() {
 
   int buttonState = digitalRead(ENCODER_BUTTON);
   if (buttonState == LOW) {
-    menuSelection = (menuSelection + 1) % 3;
+    menuSelection = (menuSelection + 1) % 4;
     delay(200);
   }
 
@@ -59,6 +63,11 @@ void runMenu() {
   }
 
   if (menuSelection == 2 && pos != lastPos) {
+    direction = (direction == 'X') ? 'Y' : 'X';
+    lastPos = pos;
+  }
+
+  if (menuSelection == 3 && pos != lastPos) {
     isStarted = true;
     lastPos = pos;
   }
@@ -82,19 +91,29 @@ void loop() {
       lcd.print("READY");
     } else {
       lcd.setCursor(0, 0);
-      lcd.print("INIT " + String(menuSelection == 0 ? ">" : " ") + "X: " + String(xStartPosition) +
-                " " + String(menuSelection == 1 ? ">" : " ") + "Y:" + String(yStartPosition));
+      lcd.print("INIT " + String(menuSelection == 0 ? ">" : " ") + "X: " + String(xStartPosition) + " " + String(menuSelection == 1 ? ">" : " ") + "Y:" + String(yStartPosition));
       lcd.setCursor(0, 1);
-      lcd.print(menuSelection == 2 ? ">START" : " START");
+      lcd.print(String(menuSelection == 2 ? ">DIR:" : " DIR:") + direction + "  " + String(menuSelection == 3 ? ">START" : " START"));
     }
     lastLCDChange = currentTime;
-
-    
   }
 
+  // Run Mode Logic
   if (isStarted) {
     Start();
   } else {
     runMenu();
+  }
+
+  while (mySerial.available() > 0) {
+    char inChar = (char)mySerial.read();
+    if (inChar == '\n') {  // assuming '\n' as the end-of-line character for your incoming messages
+      mySerialData = newSerialData;
+      newSerialData = "";
+      newData = false;
+      Serial.println(mySerialData);
+    } else {
+      newSerialData += inChar;
+    }
   }
 }
