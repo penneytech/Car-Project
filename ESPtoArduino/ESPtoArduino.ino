@@ -1,15 +1,16 @@
 #include <SoftwareSerial.h>
 #include <ESP8266WiFi.h>
-#include <WebSocketsClient.h>
+#include <WebSocketsClient.h> // "WebSockets library by Markus Sattler"
 
 SoftwareSerial mySerial(D5, D6);  // RX, TX
 String receivedData = "";
 unsigned long lastMessageTime = 0;
 unsigned long lastBlinkTime = 0;
 
-char ssid[] = "Ziltoid";
-char pass[] = "omniscient";
-char serverAddress[] = "192.168.2.87";
+char ssid[] = "PenneyTest";
+char pass[] = "password";
+//char serverAddress[] = "192.168.2.87";
+char serverAddress[] = "192.168.0.195";
 int port = 8080;
 unsigned long previousMillis = 0;
 const long interval = 50;
