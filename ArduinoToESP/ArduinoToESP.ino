@@ -11,16 +11,13 @@
 #define SENSOR_2_PIN A1
 #define SENSOR_3_PIN A2
 #define SENSOR_4_PIN A3
-int lastSensor1State = 0;
-int lastSensor2State = 0;
-int lastSensor3State = 0;
-int lastSensor4State = 0;
 
 EncoderStepCounter encoder(ENCODER_PIN1, ENCODER_PIN2, HALF_STEP);
 SoftwareSerial mySerial(10, 11);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 unsigned long lastLCDChange = 0;
+int LCDRefreshRate = 200;
 
 int menuSelection = 0;
 int xStartPosition = 0;
@@ -28,54 +25,10 @@ int yStartPosition = 0;
 char direction = 'X';
 signed char prevPos = 0;
 
-bool isStarted = false;
+bool isStarted = true;
 String mySerialData;
 String newSerialData;
 bool newData = false;
-
-void Start() {
-  if (digitalRead(ENCODER_BUTTON) == LOW) {
-    isStarted = false;
-    delay(200);
-  }
-
-  lcd.setCursor(0, 1);
-  lcd.print(mySerialData);
-}
-
-void runMenu() {
-  encoder.tick();
-  signed char pos = encoder.getPosition();
-  static signed char lastPos = pos;
-
-  int buttonState = digitalRead(ENCODER_BUTTON);
-  if (buttonState == LOW) {
-    menuSelection = (menuSelection + 1) % 4;
-    delay(200);
-  }
-
-  if (menuSelection == 0 && pos != lastPos) {
-    xStartPosition += (pos > lastPos) ? 1 : -1;
-    xStartPosition = max(xStartPosition, 0);
-    lastPos = pos;
-  }
-
-  if (menuSelection == 1 && pos != lastPos) {
-    yStartPosition += (pos > lastPos) ? 1 : -1;
-    yStartPosition = max(yStartPosition, 0);
-    lastPos = pos;
-  }
-
-  if (menuSelection == 2 && pos != lastPos) {
-    direction = (direction == 'X') ? 'Y' : 'X';
-    lastPos = pos;
-  }
-
-  if (menuSelection == 3 && pos != lastPos) {
-    isStarted = true;
-    lastPos = pos;
-  }
-}
 
 void setup() {
   Serial.begin(9600);
@@ -92,48 +45,20 @@ void setup() {
 }
 
 void loop() {
-  unsigned long currentTime = millis();
-  if (currentTime - lastLCDChange >= 200) {
-    lcd.clear();
+
     if (isStarted) {
-      lcd.setCursor(0, 0);
-      lcd.print("READY");
+
     } else {
-      lcd.setCursor(0, 0);
-      lcd.print("INIT " + String(menuSelection == 0 ? ">" : " ") + "X: " + String(xStartPosition) + " " + String(menuSelection == 1 ? ">" : " ") + "Y:" + String(yStartPosition));
-      lcd.setCursor(0, 1);
-      lcd.print(String(menuSelection == 2 ? ">DIR:" : " DIR:") + direction + "  " + String(menuSelection == 3 ? ">START" : " START"));
+      runMenu();
     }
-    lastLCDChange = currentTime;
 
-  int currentSensor1State = digitalRead(SENSOR_1_PIN);
-  int currentSensor2State = digitalRead(SENSOR_2_PIN);
-  int currentSensor3State = digitalRead(SENSOR_3_PIN);
-  int currentSensor4State = digitalRead(SENSOR_4_PIN);
 
-  if (currentSensor1State != lastSensor1State) {
-    mySerial.print("Sensor 1 change: " + String(currentSensor1State) + '\n');
-    lastSensor1State = currentSensor1State;
-  }
-  if (currentSensor2State != lastSensor2State) {
-    mySerial.print("Sensor 2 change: " + String(currentSensor2State) + '\n');
-    lastSensor2State = currentSensor2State;
-  }
-  if (currentSensor3State != lastSensor3State) {
-    mySerial.print("Sensor 3 change: " + String(currentSensor3State) + '\n');
-    lastSensor3State = currentSensor3State;
-  }
-  if (currentSensor4State != lastSensor4State) {
-    mySerial.print("Sensor 4 change: " + String(currentSensor4State) + '\n');
-    lastSensor4State = currentSensor4State;
-  }
-  }
+  
 
   // Run Mode Logic
   if (isStarted) {
     Start();
   } else {
-    runMenu();
   }
 
   while (mySerial.available() > 0) {
@@ -150,6 +75,4 @@ void loop() {
       newSerialData += inChar;
     }
   }
-
-
 }
