@@ -47,7 +47,7 @@ wss.on("connection", (ws) => {
     clients[ws.clientID] = ws;
   }
 
-  ws.send("Welcome to the WebSocket server!");
+  //  ws.send({data: "Welcome to the WebSocket server!"});
 });
 
 server.listen(8080, () => {

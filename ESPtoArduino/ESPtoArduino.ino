@@ -16,7 +16,7 @@ unsigned long previousMillis = 0;
 const long interval = 50;
 const long disconnectInterval = 5000;
 unsigned long lastDisconnectPrint = 0;
-const char* clientID = "uniqueClientID1";  // Changed to a const char array
+const char* clientID = "PenneyBot3000";  // Changed to a const char array
 int count = 0;                             // Declare the count variable
 WiFiClient wifi;
 WebSocketsClient client;
