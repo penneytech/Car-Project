@@ -9,8 +9,8 @@ unsigned long lastBlinkTime = 0;
 
 char ssid[] = "PenneyTest";
 char pass[] = "password";
-//char serverAddress[] = "192.168.2.87";
-char serverAddress[] = "192.168.0.195";
+char serverAddress[] = "192.168.2.87";
+//char serverAddress[] = "192.168.0.195";
 int port = 8080;
 unsigned long previousMillis = 0;
 const long interval = 50;
