@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 #include <ESP8266WiFi.h>
-#include <WebSocketsClient.h> // "WebSockets library by Markus Sattler"
+#include <WebSocketsClient.h>  // "WebSockets library by Markus Sattler"
 
 SoftwareSerial mySerial(D5, D6);  // RX, TX
 String receivedData = "";
@@ -9,15 +9,15 @@ unsigned long lastBlinkTime = 0;
 
 char ssid[] = "PenneyTest";
 char pass[] = "password";
-char serverAddress[] = "192.168.2.87";
-//char serverAddress[] = "192.168.0.195";
+//char serverAddress[] = "192.168.2.87";
+char serverAddress[] = "192.168.0.195";
 int port = 8080;
 unsigned long previousMillis = 0;
 const long interval = 50;
 const long disconnectInterval = 5000;
 unsigned long lastDisconnectPrint = 0;
 const char* clientID = "PenneyBot3000";  // Changed to a const char array
-int count = 0;                             // Declare the count variable
+int count = 0;                           // Declare the count variable
 WiFiClient wifi;
 WebSocketsClient client;
 
@@ -39,6 +39,9 @@ void setup() {
   client.begin(serverAddress, port);
   client.onEvent(webSocketEvent);
   client.setAuthorization("Authorization Header");  // Add your authorization header if needed
+
+  delay(1000);                                      // Wait for a second before sending the initial message
+  String messageToSend = "ID:" + String(clientID);  // Send the client ID on reconnection
 }
 
 
@@ -85,7 +88,7 @@ void loop() {
     char c = mySerial.read();
     if (c == '\n') {
       Serial.println("Received: " + receivedData);
-       client.sendTXT(receivedData); // Send the message
+      client.sendTXT(receivedData);  // Send the message
       receivedData = "";
     } else {
       receivedData += c;
