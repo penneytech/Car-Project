@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <h1><center>WebSocket Robot Grid</center></h1>
+    <style>
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(10, 40px);
+        grid-template-rows: repeat(10, 40px);
+        gap: 1px;
+        transform: scaleY(-1); /* Flip grid to have (0,0) at the bottom left */
+      }
+
+      .grid-cell {
+        background-color: lightgray;
+        border: 1px solid black;
+        height: 40px;
+      }
+
+      .robot {
+        width: 13px;
+        height: 10px;
+        transform-origin: center center; /* Set the rotation origin to the center of the robot */
+        position: relative;
+        top: -10.5px;
+        left: -13.6px;
+      }
+
+      .robot.north {
+        transform: rotate(180deg);
+      }
+
+      .robot.east {
+        transform: rotate(90deg);
+      }
+
+      .robot.south {
+        transform: rotate(360deg);
+      }
+
+      .robot.west {
+        transform: rotate(270deg);
+      }
+
+      .robot.red {
+        background-image: url("https://cdn.pixabay.com/photo/2013/07/12/11/58/car-145008_1280.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        width: 20px;
+        height: 20px;
+      }
+      .robot.blue {
+        background-image: url("https://cdn.discordapp.com/attachments/709408796451274814/1164970974366666804/blue-car.png?ex=654526c4&is=6532b1c4&hm=bc85b0eeee7188afcfd2622106390b34828082e53c9ab37541ef55148833dd73&");
+        background-size: contain;
+        background-repeat: no-repeat;
+        width: 20px;
+        height: 20px;
+      }
+      .robot.yellow {
+        background-image: url("https://cdn.discordapp.com/attachments/709408796451274814/1164965421326286889/169781972051045661.png?ex=65452198&is=6532ac98&hm=e2ee287011794b6caa3028c2fb77c68f0b70a7c05ebe3532dd131b5250d92147&");
+        background-size: contain;
+        background-repeat: no-repeat;
+        width: 20px;
+        height: 20px;
+      }
+      .robot.green {
+        background-image: url("https://cdn.discordapp.com/attachments/709408796451274814/1164971611124936807/green-car.png?ex=6545275c&is=6532b25c&hm=ec802e5d64882b70b46d56c2b3b2b858b2b893158825a1f949a2538acd25072b&");
+        background-size: contain;
+        background-repeat: no-repeat;
+        width: 20px;
+        height: 20px;
+      }
+
+      .robot-info {
+        text-align: center;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <!-- Cells will be dynamically added here -->
+    </div>
+    <div class="robot-info">
+      <!-- Robot info will be dynamically added here -->
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
