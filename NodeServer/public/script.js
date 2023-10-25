@@ -16,8 +16,8 @@ function updateGrid(robotData) {
   const grid = document.querySelector(".grid");
   grid.innerHTML = "";
 
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
+  for (let y = 0; y < 6; y++) {
+    for (let x = 0; x < 6; x++) {
       const cell = document.createElement("div");
       cell.classList.add("grid-cell");
       const robot = robotData.find((r) => r.x === x && r.y === y);
