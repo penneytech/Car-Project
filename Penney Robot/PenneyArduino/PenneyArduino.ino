@@ -4,18 +4,15 @@
 // Misc Program Variables
 int currentX = 0;
 int currentY = 0;
-String currentCardinalDirection = "E";  // Starting facing "East", aka toward the X direction
-
+int currentLine = 0;
+int turnCounter = 2;
+int turnDirection = 1;  // 1 is right, 0 is left
 bool intersectionDetected = false;
-String lastKnownDirection = "Forward";
-
 bool isTurning = false;
-String isTurningDirection = "";
-unsigned long turningStartTime = 0;  // Variable to hold the time when turning started
 
-// Add a new variable to hold the time when the robot first loses sight of the line
-unsigned long lineLostStartTime = 0;
-
+// Timer Variablews
+unsigned long turningStartTime = 0;   // Variable to hold the time when turning started
+unsigned long lineLostStartTime = 0;  // Add a new variable to hold the time when the robot first loses sight of the line
 
 // IR Sensor Connections
 #define IR1 A3
@@ -23,24 +20,17 @@ unsigned long lineLostStartTime = 0;
 #define IR3 A1
 #define IR4 A0
 
-// Motor A connections
+// Motor connections
 #define MOTOR_A1 3
 #define MOTOR_A2 5
-// Motor B connections
 #define MOTOR_B1 10
 #define MOTOR_B2 11
-
-// Motor Speed Variables
-int motorSpeed = 255;           // Overall Motor speed (0-255)
-int motorSpeedAMultiplier = 1;  // Adjust this multiplier for Motor A speed to correct for differences.
-int motorSpeedBMultiplier = 1;  // Adjust this multiplier for Motor B speed to correct for differences.
 
 // Software Serial Setup
 SoftwareSerial mySerial(12, 13);
 
 // Variables for asynchronous NodeMCU ESP messages.
 unsigned long previousMillis = 0;
-const long interval = 1000;  // 1000 milliseconds (1 second) interval for sending message
 
 void setup() {
 
@@ -67,6 +57,24 @@ void setup() {
   digitalWrite(MOTOR_B2, LOW);
 }
 
+void handleIntersectionDetection() {
+
+  if (intersectionDetected == false) {
+    currentLine++;  // increment currentline by 1;
+    intersectionDetected = true;
+    if (currentLine >= turnCounter) {
+     // turnDirection = !turnDirection;
+      isTurning = true;
+      currentLine = 0;
+      controlMotor(90, 90);  // Bump Straight
+      delay(150);
+    }
+
+    Serial.print("Current Line: ");
+    Serial.println(currentLine);
+  }
+}
+
 void loop() {
 
   /****************
@@ -80,97 +88,98 @@ void loop() {
   int IR4Output = digitalRead(IR4);
 
   // Serial Print IR outputs for debugging
-  Serial.print(IR1Output);
-  Serial.print(IR2Output);
-  Serial.print(IR3Output);
-  Serial.print(IR4Output);
+  // Serial.print(IR1Output);
+  // Serial.print(IR2Output);
+  // Serial.print(IR3Output);
+  // Serial.print(IR4Output);
 
   /****************
  * Motor Control Logic
  ****************/
+
+  int motorSpeedNormal = 150;
+  int motorSpeedSlower = 80;
+
   if (isTurning == true) {
+
     if (turningStartTime == 0) {    // If turning just started
       turningStartTime = millis();  // Record the start time of turning
+      delay(50);                    // Delay for turn bump
     }
 
     Serial.println("ISTURNING TRUE");
-    controlMotor(-90, 90);  // Turn left
+
+    if (turnDirection == 1) {
+      controlMotor(-100, 100);  // Turn right
+    } else {
+      controlMotor(100, -100);  // Turn left
+    }
 
     unsigned long elapsedTurningTime = millis() - turningStartTime;
 
-    if (elapsedTurningTime >= 150) {
-      int IR2Output = digitalRead(IR2);
-      int IR3Output = digitalRead(IR3);
+    if (elapsedTurningTime >= 400) {  // Start trying to detect line after specified time since turn started
+
+      IR2Output = digitalRead(IR2);
+      IR3Output = digitalRead(IR3);
+
       if (IR2Output == HIGH || IR3Output == HIGH) {
+        //delay(30);
         controlMotor(0, 0);  // stop;
-        delay(500);
+        delay(200);
         isTurning = false;
         turningStartTime = 0;  // Reset the turning start time
+        currentLine = 0;
       }
     }
 
-    if (elapsedTurningTime >= 2000) {
-      controlMotor(0, 0);  // stop;
+    if (elapsedTurningTime >= 2000) {  // Maybe we didn't find any line.
+      controlMotor(0, 0);              // stop;
       delay(1000);
       isTurning = false;
       turningStartTime = 0;  // Reset the turning start time
+      currentLine = 0;
     }
 
   } else
     // Handle Intersection Crossings
-    if (IR1Output == HIGH && IR2Output == HIGH && IR3Output == HIGH && IR4Output == HIGH) {  // All sensors on a black line
-      controlMotor(200, 200);                                                                // Both motors forward at full speed
-      Serial.println(" Crossing Internal Intersection");
-    } else if (IR1Output == HIGH && IR2Output == HIGH && IR3Output == HIGH && IR4Output == LOW) {  // All sensors on a black line except for rightmost
-      controlMotor(200, 200);                                                                      // Both motors forward at full speed
-      Serial.println(" Crossing Internal Intersection On Edge (Right)");
-    } else if (IR1Output == LOW && IR2Output == HIGH && IR3Output == HIGH && IR4Output == HIGH) {  // All sensors on a black line except for leftmost
-      controlMotor(200, 200);                                                                      // Both motors forward at full speed
-      Serial.println(" Crossing Internal Intersection On Edge (Left)");
-
+    if (IR1Output == HIGH && IR4Output == HIGH) {  // All sensors on a black line
+      controlMotor(motorSpeedNormal, motorSpeedNormal);
+      handleIntersectionDetection();
+    } else if (IR1Output == HIGH && IR4Output == LOW) {  // All sensors on a black line except for rightmost
+      controlMotor(motorSpeedNormal, motorSpeedNormal);
+      handleIntersectionDetection();
+    } else if (IR1Output == LOW && IR4Output == HIGH) {  // All sensors on a black line except for leftmost
+      controlMotor(motorSpeedNormal, motorSpeedNormal);
+      handleIntersectionDetection();
       // Keep the robot on the line
     } else if (IR2Output == HIGH && IR3Output == HIGH) {  // Both center sensors on a black line
-      controlMotor(200, 200);                             // Both motors forward at full speed
+      controlMotor(motorSpeedNormal, motorSpeedNormal);   // Both motors forward at full speed
       Serial.println("Going Straight");
-      lastKnownDirection = "Forward";
+      intersectionDetected = false;
     } else if (IR2Output == LOW && IR3Output == HIGH) {  // Left sensor only on a black line
-      controlMotor(100, 200);
+      controlMotor(motorSpeedSlower, motorSpeedNormal);
       Serial.println("Turn Right");
-      lastKnownDirection = "Right";
+      intersectionDetected = false;
     } else if (IR2Output == HIGH && IR3Output == LOW) {  // Right sensor only on a black line
-      controlMotor(200, 100);                            // Motor 1 backward, Motor 2 forward (turn left)
+      controlMotor(motorSpeedNormal, motorSpeedSlower);  // Motor 1 backward, Motor 2 forward (turn left)
       Serial.println("Turn Left");
-      lastKnownDirection = "Left";
-
+      intersectionDetected = false;
       // Other cases
-    }
-
-    // else if (IR2Output == LOW && IR3Output == LOW) {  // Both center sensors are high - we lost the line. Turn the robot in the last known direction of the line
-    //   controlMotor(255, 255);                           // Both motors forward at full speed
-
-    //   // Serial.print("Finding the line - turning ");
-    //   // Serial.println(lastKnownDirection);
-
-    //   // if (lastKnownDirection == "Left") {  // Turn toward the line hopefully
-    //   //   motorLeft();
-    //   // } else if (lastKnownDirection == "Right") {  // Turn toward the line hopefully
-    //   //   motorRight();
-    //   // } else if (lastKnownDirection == "Forward") {  // Keep on keeping on
-    //   //   motorForward();
-    //   // }
-
-    //}
-    else {
-      controlMotor(0, 0);  // Stop both motors
+    } else {
+      // controlMotor(0, 0);  // Stop both motors
       Serial.println("No Lines Detected");
+
+      intersectionDetected = false;
+      currentLine = 0;
 
       // Record the time when the line is first lost
       if (lineLostStartTime == 0) {
         lineLostStartTime = millis();
       }
 
-      // Check if the line has been lost for 300ms or more
-      if (millis() - lineLostStartTime >= 300) {
+      // Check if the line has been lost for a specified time
+      if (millis() - lineLostStartTime >= 50) {
+        Serial.print("Lost Line");
         isTurning = true;
         lineLostStartTime = 0;  // Reset the line lost start time
       }
@@ -180,38 +189,13 @@ void loop() {
   if (IR2Output == HIGH || IR3Output == HIGH) {
     lineLostStartTime = 0;
   }
-  // Are we on an intersection currently? Trip the intersectionDetected boolean to avoid double counting intersections.
-
-  if (IR1Output == HIGH && IR2Output == HIGH && IR3Output == HIGH && IR4Output == HIGH) {  // All sensors on a black line
-    intersectionDetected = true;
-  } else if (IR1Output == HIGH && IR2Output == HIGH && IR3Output == HIGH && IR4Output == LOW) {  // All sensors on a black line except for rightmost
-    intersectionDetected = true;
-  } else if (IR1Output == LOW && IR2Output == HIGH && IR3Output == HIGH && IR4Output == HIGH) {  // All sensors on a black line except for rightmost
-    intersectionDetected = true;
-  } else {
-    intersectionDetected = false;
-  }
-
-  /****************
- * Motor Testing
- ****************/
-
-  // motorForward();
-  // delay(1000);
-  // motorBackward();
-  // delay(1000);
-  // motorLeft();
-  // delay(1000);
-  // motorRight();
-  // delay(1000);
-  // motorStop();
-  // delay(1000);
 
   /****************
  * Communicate With ESP8266 Testing
  ****************/
 
   // unsigned long currentMillis = millis();
+  // const long interval = 1000;  // 1000 milliseconds (1 second) interval for sending message
 
   // if (currentMillis - previousMillis >= interval) {
   //   previousMillis = currentMillis;
