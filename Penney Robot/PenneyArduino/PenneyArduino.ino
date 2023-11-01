@@ -9,6 +9,8 @@ int turnCounter = 2;
 int turnDirection = 1;  // 1 is right, 0 is left
 bool intersectionDetected = false;
 bool isTurning = false;
+bool IR2High = false;  // Variable to keep track of IR2 state
+bool IR3High = false;  // Variable to keep track of IR3 state
 
 // Timer Variablews
 unsigned long turningStartTime = 0;   // Variable to hold the time when turning started
@@ -19,6 +21,18 @@ unsigned long lineLostStartTime = 0;  // Add a new variable to hold the time whe
 #define IR2 A2
 #define IR3 A1
 #define IR4 A0
+
+// Debouncing Variables for IR sensors
+unsigned long lastChangeTimeIR1 = 0;
+unsigned long lastChangeTimeIR2 = 0;
+unsigned long lastChangeTimeIR3 = 0;
+unsigned long lastChangeTimeIR4 = 0;
+int lastStateIR1 = LOW;
+int lastStateIR2 = LOW;
+int lastStateIR3 = LOW;
+int lastStateIR4 = LOW;
+unsigned long debounceThreshold = 100;  // Debounce time in milliseconds
+
 
 // Motor connections
 #define MOTOR_A1 3
@@ -82,10 +96,45 @@ void loop() {
   ****************/
 
   // Read IR pins
-  int IR1Output = digitalRead(IR1);
-  int IR2Output = digitalRead(IR2);
-  int IR3Output = digitalRead(IR3);
-  int IR4Output = digitalRead(IR4);
+
+    // Read IR pins
+  int rawIR1 = digitalRead(IR1);
+  int rawIR2 = digitalRead(IR2);
+  int rawIR3 = digitalRead(IR3);
+  int rawIR4 = digitalRead(IR4);
+
+  // Debounce IR1
+  if (rawIR1 != lastStateIR1) {
+    lastChangeTimeIR1 = millis();
+  }
+  int IR1Output = (millis() - lastChangeTimeIR1 > debounceThreshold) ? rawIR1 : lastStateIR1;
+  lastStateIR1 = rawIR1;
+
+  // Debounce IR2
+  if (rawIR2 != lastStateIR2) {
+    lastChangeTimeIR2 = millis();
+  }
+  int IR2Output = (millis() - lastChangeTimeIR2 > debounceThreshold) ? rawIR2 : lastStateIR2;
+  lastStateIR2 = rawIR2;
+
+  // Debounce IR3
+  if (rawIR3 != lastStateIR3) {
+    lastChangeTimeIR3 = millis();
+  }
+  int IR3Output = (millis() - lastChangeTimeIR3 > debounceThreshold) ? rawIR3 : lastStateIR3;
+  lastStateIR3 = rawIR3;
+
+  // Debounce IR4
+  if (rawIR4 != lastStateIR4) {
+    lastChangeTimeIR4 = millis();
+  }
+  int IR4Output = (millis() - lastChangeTimeIR4 > debounceThreshold) ? rawIR4 : lastStateIR4;
+  lastStateIR4 = rawIR4;
+  
+  // int IR1Output = digitalRead(IR1);
+  // int IR2Output = digitalRead(IR2);
+  // int IR3Output = digitalRead(IR3);
+  // int IR4Output = digitalRead(IR4);
 
   // Serial Print IR outputs for debugging
   // Serial.print(IR1Output);
@@ -104,25 +153,25 @@ void loop() {
 
     if (turningStartTime == 0) {    // If turning just started
       turningStartTime = millis();  // Record the start time of turning
-      delay(50);                    // Delay for turn bump
+      delay(150);                    // Delay for turn bump
     }
 
     Serial.println("ISTURNING TRUE");
 
     if (turnDirection == 1) {
-      controlMotor(-100, 100);  // Turn right
+      controlMotor(-120, 120);  // Turn right
     } else {
-      controlMotor(100, -100);  // Turn left
+      controlMotor(120, -120);  // Turn left
     }
 
     unsigned long elapsedTurningTime = millis() - turningStartTime;
 
-    if (elapsedTurningTime >= 400) {  // Start trying to detect line after specified time since turn started
+    if (elapsedTurningTime >= 350) {  // Start trying to detect line after specified time since turn started
 
       IR2Output = digitalRead(IR2);
       IR3Output = digitalRead(IR3);
 
-      if (IR2Output == HIGH || IR3Output == HIGH) {
+      if (IR3Output == HIGH) {
         //delay(30);
         controlMotor(0, 0);  // stop;
         delay(200);
@@ -132,13 +181,13 @@ void loop() {
       }
     }
 
-    if (elapsedTurningTime >= 2000) {  // Maybe we didn't find any line.
-      controlMotor(0, 0);              // stop;
-      delay(1000);
-      isTurning = false;
-      turningStartTime = 0;  // Reset the turning start time
-      currentLine = 0;
-    }
+    // if (elapsedTurningTime >= 2000) {  // Maybe we didn't find any line.
+    //   controlMotor(0, 0);              // stop;
+    //   delay(1000);
+    //   isTurning = false;
+    //   turningStartTime = 0;  // Reset the turning start time
+    //   currentLine = 0;
+    // }
 
   } else
     // Handle Intersection Crossings
